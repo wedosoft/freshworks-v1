@@ -1,0 +1,36 @@
+{
+  "modules": {
+    "call": {
+      "events": {
+        "onCallCreate": {
+          "handler": "onCallCreateHandler"
+        }
+      }
+    },
+    "support_ticket": {
+      "events": []
+    },
+    "common": {
+      "location": {
+        "full_page_app": {
+          "url": "index.html",
+          "icon": "styles/images/icon.svg"
+        }
+      },
+      "events": {},
+      "functions": {
+        "getLastCallPayload": {}
+      },
+      "requests": {}
+    }
+  },
+  "platform-version": "3.0",
+  "engines": {
+    "node": "18.18.2",
+    "fdk": "9.3.1"
+  },
+  "app": {
+    "tracking_id": "uicv69j2qf4v0jki008u",
+    "start_time": "2025-03-03T09:04:35.607Z"
+  }
+}

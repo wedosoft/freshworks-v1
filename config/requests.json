@@ -1,0 +1,17 @@
+
+{
+  "fetch_contact_info": {
+    "schema": {
+      "method": "GET",
+      "host": "<%= iparam.freshdesk_domain %>",
+      "path": "/api/v2/contacts",
+      "headers": {
+        "Authorization": "Basic <%= encode(iparam.freshdesk_api_key + ':X') %>",
+        "Content-Type": "application/json"
+      },
+      "query": {
+        "phone": "<%= context.data.caller_number %>"
+      }
+    }
+  }
+}
