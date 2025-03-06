@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>발신자 정보</title>
+  
+  <!-- Crayons CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@freshworks/crayons@v4/css/crayons-min.css">
+  
+  <!-- Crayons JS -->
+  <script type="module" src="https://cdn.jsdelivr.net/npm/@freshworks/crayons@v4/dist/crayons/crayons.esm.js"></script>
+  <script nomodule src="https://cdn.jsdelivr.net/npm/@freshworks/crayons@v4/dist/crayons/crayons.js"></script>
+  
+  <!-- FDK Client -->
+  <script src="https://static.freshdev.io/fdk/2.0/assets/fresh_client.js"></script>
+  
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+    .caller-card {
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+      background-color: #f8f9fa;
+      border: 1px solid #e9ecef;
+    }
+    .caller-name {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    .caller-number {
+      font-size: 16px;
+      color: #555;
+      margin-bottom: 10px;
+    }
+    .call-direction {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      margin-right: 10px;
+    }
+    .incoming {
+      background-color: #e7f5ff;
+      color: #0366d6;
+    }
+    .outgoing {
+      background-color: #e6f6e6;
+      color: #28a745;
+    }
+    .call-time {
+      font-size: 12px;
+      color: #666;
+    }
+    .info-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    .info-table th {
+      text-align: left;
+      padding: 8px;
+      background-color: #f0f0f0;
+      width: 120px;
+    }
+    .info-table td {
+      padding: 8px;
+      border-bottom: 1px solid #eee;
+    }
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- 발신자 정보 카드 -->
+    <div class="caller-card">
+      <div class="caller-name" id="caller-name">알 수 없는 발신자</div>
+      <div class="caller-number" id="caller-number">알 수 없음</div>
+      <div>
+        <span id="call-direction-badge" class="call-direction incoming">수신</span>
+        <span id="call-time" class="call-time">로딩 중...</span>
+      </div>
+    </div>
+    
+    <!-- 통화 정보 -->
+    <div class="call-info-section">
+      <h3>통화 정보</h3>
+      <table class="info-table" id="call-info-table">
+        <tr>
+          <th>통화 ID</th>
+          <td id="call-id">로딩 중...</td>
+        </tr>
+        <tr>
+          <th>시작 시간</th>
+          <td id="call-start-time">로딩 중...</td>
+        </tr>
+        <tr>
+          <th>상태</th>
+          <td id="call-status">로딩 중...</td>
+        </tr>
+        <tr id="call-notes-row" style="display:none;">
+          <th>메모</th>
+          <td id="call-notes"></td>
+        </tr>
+      </table>
+    </div>
+    
+    <!-- 작업 버튼 -->
+    <div class="actions">
+      <fw-button id="create-ticket-btn" color="primary">티켓 생성</fw-button>
+      <fw-button id="close-btn" color="secondary">닫기</fw-button>
+    </div>
+  </div>
+
+  <script>
+    let client;
+    
+    async function initModal() {
+      try {
+        // 앱 클라이언트 초기화
+        client = await app.initialized();
+        console.log('모달 초기화 성공');
+        
+        // 모달 데이터 가져오기 (직접 호출 방식)
+        const lastCallData = await getLastCallData();
+        updateModalContent(lastCallData);
+        
+        // 버튼 이벤트 설정
+        setupButtons();
+        
+      } catch (error) {
+        console.error('모달 초기화 실패:', error);
+        alert('모달 초기화 중 오류가 발생했습니다: ' + error.message);
+      }
+    }
+    
+    // 마지막 통화 데이터 가져오기
+    async function getLastCallData() {
+      try {
+        const response = await client.request.invoke('getLastCallPayload', {});
+        console.log('통화 데이터 응답:', response);
+        
+        if (response && response.response) {
+          const data = response.response;
+          
+          if (data.success && data.payload) {
+            return data.payload;
+          } else if (data.test_data) {
+            return data.test_data;
+          }
+        }
+        
+        throw new Error('유효한 통화 데이터를 가져올 수 없습니다.');
+      } catch (error) {
+        console.error('통화 데이터 가져오기 오류:', error);
+        return null;
+      }
+    }
+    
+    // 모달 내용 업데이트
+    function updateModalContent(callPayload) {
+      if (!callPayload || !callPayload.data || !callPayload.data.call) {
+        console.error('유효한 통화 데이터가 없습니다.');
+        return;
+      }
+      
+      const callData = callPayload.data.call;
+      
+      // 고객 정보 추출
+      let customerInfo = { caller_number: "알 수 없음" };
+      if (callData.participants && Array.isArray(callData.participants)) {
+        const customer = callData.participants.find(p => p.participant_type === "Customer");
+        if (customer) {
+          customerInfo = customer;
+        }
+      }
+      
+      // 발신자 이름/번호 업데이트
+      document.getElementById('caller-name').textContent = customerInfo.name || '알 수 없는 발신자';
+      document.getElementById('caller-number').textContent = customerInfo.caller_number || '알 수 없음';
+      
+      // 통화 방향
+      const directionBadge = document.getElementById('call-direction-badge');
+      directionBadge.textContent = callData.direction === 'incoming' ? '수신' : '발신';
+      directionBadge.className = 'call-direction ' + callData.direction;
+      
+      // 통화 시간
+      if (callData.created_time) {
+        document.getElementById('call-time').textContent = 
+          new Date(callData.created_time).toLocaleString();
+      }
+      
+      // 통화 ID
+      document.getElementById('call-id').textContent = callData.id || '알 수 없음';
+      
+      // 통화 시작 시간
+      if (callData.created_time) {
+        document.getElementById('call-start-time').textContent = 
+          new Date(callData.created_time).toLocaleString();
+      }
+      
+      // 통화 상태
+      if (customerInfo.call_status !== undefined) {
+        document.getElementById('call-status').textContent = getCallStatusText(customerInfo.call_status);
+      }
+      
+      // 통화 메모
+      if (callData.call_notes) {
+        document.getElementById('call-notes-row').style.display = '';
+        document.getElementById('call-notes').textContent = callData.call_notes;
+      }
+    }
+    
+    // 통화 상태 텍스트
+    function getCallStatusText(statusCode) {
+      const statusMap = {
+        0: "연결됨",
+        1: "대기 중",
+        2: "통화 중",
+        3: "응답 없음",
+        4: "바쁨",
+        5: "오류",
+        6: "종료됨",
+        7: "거부됨",
+        8: "준비 중"
+      };
+      return statusMap[statusCode] || `알 수 없음(${statusCode})`;
+    }
+    
+    // 버튼 이벤트 설정
+    function setupButtons() {
+      // 티켓 생성 버튼
+      document.getElementById('create-ticket-btn').addEventListener('click', async () => {
+        try {
+          await client.interface.trigger('navigate', {
+            to: 'ticket_new',
+            data: { source: 3 } // 전화
+          });
+          client.instance.close();
+        } catch (error) {
+          console.error('티켓 생성 오류:', error);
+          alert('티켓 생성 중 오류가 발생했습니다.');
+        }
+      });
+      
+      // 닫기 버튼
+      document.getElementById('close-btn').addEventListener('click', () => {
+        client.instance.close();
+      });
+    }
+    
+    // 모달 초기화
+    document.addEventListener('DOMContentLoaded', initModal);
+  </script>
+</body>
+</html>

@@ -4,7 +4,11 @@
       "events": {
         "onCallCreate": {
           "handler": "onCallCreateHandler"
+        },
+        "onCallUpdate": {
+          "handler": "onCallUpdateHandler"
         }
+      
       }
     },
     "support_ticket": {
@@ -32,5 +36,13 @@
   "app": {
     "tracking_id": "uicv69j2qf4v0jki008u",
     "start_time": "2025-03-03T09:04:35.607Z"
-  }
+  },
+  "allowed-domains": [
+    "https://*.freshworks.com",
+    "https://*.freshdesk.com",
+    "https://rts-*.freshworksapi.com",
+    "https://getbeamer.com",
+    "http://localhost:10001",
+    "https://*.ngrok-free.ap"
+  ]
 }
