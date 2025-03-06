@@ -8,7 +8,6 @@
         "onCallUpdate": {
           "handler": "onCallUpdateHandler"
         }
-      
       }
     },
     "support_ticket": {
@@ -17,6 +16,10 @@
     "common": {
       "location": {
         "full_page_app": {
+          "url": "index.html",
+          "icon": "styles/images/icon.svg"
+        },
+        "call_sidebar": {
           "url": "index.html",
           "icon": "styles/images/icon.svg"
         }
